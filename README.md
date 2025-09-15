@@ -7,6 +7,20 @@ panintelligence tech test
     - gradlew
     - gradlew bootRun
 
+## Example CURL
+    curl --request POST \
+    --url http://localhost:9999/find-quickest \
+    --header 'Content-Type: application/json' \
+    --header 'User-Agent: insomnia/10.3.1' \
+    --data '{
+    "journey": {
+    "passengers": 2,
+    "homeToAirport": "B20",
+    "destination": "D"
+    }
+    }'
+ 
+
 ## Things to improve given more time
  - More thorough unit testing.
  - More thorough component test - negative scenarios, more edge cases.
