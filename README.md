@@ -1,5 +1,5 @@
 # Holidayagency
-panintelligence tech test
+This project is a small rest API written using spring boot to be submitted as part of the panintelligence tech test.
 ## Dependencies:
     - Java 21
 
