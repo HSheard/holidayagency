@@ -2,6 +2,7 @@ package com.hakim.holidayagency.service.JourneyPlannerService;
 
 import com.hakim.holidayagency.domain.Journey;
 import com.hakim.holidayagency.domain.JourneySuggestion;
+import com.hakim.holidayagency.domain.Vehicle;
 import com.hakim.holidayagency.service.FlightRoutesService.FlightRoutesService;
 import org.jgrapht.GraphPath;
 import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
@@ -14,6 +15,12 @@ import java.util.ArrayList;
 @Service
 public class JourneyPlannerServiceImpl implements JourneyPlannerService {
     final double FLIGHT_COST_PER_MILE = 0.10;
+    final double CAR_COST_PER_MILE = 0.20;
+    final double TAXI_COST_PER_MILE = 0.40;
+    final double PARKING_CHARGE = 3.00;
+    final int MAX_CAR_PASSENGERS = 4;
+    final int MAX_TAXI_PASSENGERS = 4;
+
     FlightRoutesService flightRoutesService;
 
 
@@ -27,11 +34,36 @@ public class JourneyPlannerServiceImpl implements JourneyPlannerService {
         DirectedWeightedMultigraph<String, DefaultWeightedEdge> flightRoutesGraph = flightRoutesService.getFlightRoutes();
         populateOutbound(flightRoutesGraph, journey, journeySuggestion);
         populateInbound(flightRoutesGraph, journey, journeySuggestion);
+        populateVehicleCosts(journey, journeySuggestion);
+        populateTotalCost(journeySuggestion);
         System.out.println(journey.toString());
-        return null;
+        return journeySuggestion;
     }
 
-    private void populateVehicleCosts() {
+    private void populateTotalCost(JourneySuggestion journeySuggestion) {
+        journeySuggestion.setTotalCost(journeySuggestion.getInboundCost()+ journeySuggestion.getOutboundCost()+ journeySuggestion.getVehicleReturnCost());
+    }
+
+    private void populateVehicleCosts(Journey journey, JourneySuggestion journeySuggestion) {
+        int milesToAirport = Integer.parseInt(journey.getHomeToAirport().substring(1));
+        double taxiCost = calculateTaxiCost(journey.getPassengers(), milesToAirport);
+        double carCost = calculateCarCost(journey.getPassengers(), milesToAirport);
+        if(taxiCost < carCost){
+            journeySuggestion.setVehicle(Vehicle.TAXI);
+            journeySuggestion.setVehicleReturnCost(taxiCost);
+        }else {
+            journeySuggestion.setVehicle(Vehicle.CAR);
+            journeySuggestion.setVehicleReturnCost(carCost);
+        }
+    }
+
+    private double calculateTaxiCost(int passengers, int miles){
+        int taxisRequired = (int) Math.ceil((double) passengers /4);
+        return 2 * taxisRequired * miles * TAXI_COST_PER_MILE;
+    }
+    private double calculateCarCost(int passengers, int miles){
+        int carsRequired = (int) Math.ceil((double) passengers /4);
+        return (carsRequired * PARKING_CHARGE) + (2* carsRequired * miles * CAR_COST_PER_MILE);
 
     }
 
