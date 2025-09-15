@@ -18,6 +18,8 @@ public class JourneyPlannerServiceImpl implements JourneyPlannerService {
     final double CAR_COST_PER_MILE = 0.20;
     final double TAXI_COST_PER_MILE = 0.40;
     final double PARKING_CHARGE = 3.00;
+    final String STR_NO_OUTBOUND_FLIGHT = "No outbound flight";
+    final String STR_NO_INBOUND_FLIGHT = "No inbound flight";
     final int MAX_CAR_PASSENGERS = 4;
     final int MAX_TAXI_PASSENGERS = 4;
 
@@ -36,34 +38,39 @@ public class JourneyPlannerServiceImpl implements JourneyPlannerService {
         populateInbound(flightRoutesGraph, journey, journeySuggestion);
         populateVehicleCosts(journey, journeySuggestion);
         populateTotalCost(journeySuggestion);
-        System.out.println(journey.toString());
         return journeySuggestion;
     }
 
     private void populateTotalCost(JourneySuggestion journeySuggestion) {
-        journeySuggestion.setTotalCost(journeySuggestion.getInboundCost()+ journeySuggestion.getOutboundCost()+ journeySuggestion.getVehicleReturnCost());
+        if (journeySuggestion.getInboundRoute().equals(STR_NO_INBOUND_FLIGHT) || journeySuggestion.getOutboundRoute().equals(STR_NO_OUTBOUND_FLIGHT)) {
+            journeySuggestion.setTotalCost(0);
+        } else {
+            journeySuggestion.setTotalCost(journeySuggestion.getInboundCost() + journeySuggestion.getOutboundCost() + journeySuggestion.getVehicleReturnCost());
+
+        }
     }
 
     private void populateVehicleCosts(Journey journey, JourneySuggestion journeySuggestion) {
         int milesToAirport = Integer.parseInt(journey.getHomeToAirport().substring(1));
         double taxiCost = calculateTaxiCost(journey.getPassengers(), milesToAirport);
         double carCost = calculateCarCost(journey.getPassengers(), milesToAirport);
-        if(taxiCost < carCost){
+        if (taxiCost < carCost) {
             journeySuggestion.setVehicle(Vehicle.TAXI);
             journeySuggestion.setVehicleReturnCost(taxiCost);
-        }else {
+        } else {
             journeySuggestion.setVehicle(Vehicle.CAR);
             journeySuggestion.setVehicleReturnCost(carCost);
         }
     }
 
-    private double calculateTaxiCost(int passengers, int miles){
-        int taxisRequired = (int) Math.ceil((double) passengers /4);
+    private double calculateTaxiCost(int passengers, int miles) {
+        int taxisRequired = (int) Math.ceil((double) passengers / MAX_TAXI_PASSENGERS);
         return 2 * taxisRequired * miles * TAXI_COST_PER_MILE;
     }
-    private double calculateCarCost(int passengers, int miles){
-        int carsRequired = (int) Math.ceil((double) passengers /4);
-        return (carsRequired * PARKING_CHARGE) + (2* carsRequired * miles * CAR_COST_PER_MILE);
+
+    private double calculateCarCost(int passengers, int miles) {
+        int carsRequired = (int) Math.ceil((double) passengers / MAX_CAR_PASSENGERS);
+        return (carsRequired * PARKING_CHARGE) + (2 * carsRequired * miles * CAR_COST_PER_MILE);
 
     }
 
