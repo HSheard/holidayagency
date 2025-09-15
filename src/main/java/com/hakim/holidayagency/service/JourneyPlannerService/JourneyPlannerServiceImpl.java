@@ -9,52 +9,79 @@ import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.DirectedWeightedMultigraph;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.ArrayList;
 
 @Service
-public class JourneyPlannerServiceImpl implements JourneyPlannerService{
+public class JourneyPlannerServiceImpl implements JourneyPlannerService {
+    final double FLIGHT_COST_PER_MILE = 0.10;
     FlightRoutesService flightRoutesService;
-    public JourneyPlannerServiceImpl(FlightRoutesService flightRoutesService){
+
+
+    public JourneyPlannerServiceImpl(FlightRoutesService flightRoutesService) {
         this.flightRoutesService = flightRoutesService;
     }
+
     @Override
     public JourneySuggestion findQuickestRoute(Journey journey) {
         JourneySuggestion journeySuggestion = new JourneySuggestion();
         DirectedWeightedMultigraph<String, DefaultWeightedEdge> flightRoutesGraph = flightRoutesService.getFlightRoutes();
-        populateOutbound(flightRoutesGraph,journey, journeySuggestion);
+        populateOutbound(flightRoutesGraph, journey, journeySuggestion);
+        populateInbound(flightRoutesGraph, journey, journeySuggestion);
+        System.out.println(journey.toString());
         return null;
+    }
+
+    private void populateVehicleCosts() {
+
     }
 
     private void populateOutbound(DirectedWeightedMultigraph<String, DefaultWeightedEdge> flightRoutesGraph, Journey journey, JourneySuggestion journeySuggestion) {
-        String start = journey.getHomeToAirport().substring(0,1);
+        String start = journey.getHomeToAirport().substring(0, 1);
         String destination = journey.getDestination();
         GraphPath<String, DefaultWeightedEdge> shortestPath = findShortestPath(flightRoutesGraph, start, destination);
-        journeySuggestion.setOutboundCost(shortestPath.getWeight());
-        StringBuilder outboundRoute = new StringBuilder();
-        for (DefaultWeightedEdge defaultWeightedEdge : shortestPath.getEdgeList()) {
-            outboundRoute.append(flightRoutesGraph.getEdgeSource(defaultWeightedEdge))
-                    .append(flightRoutesGraph.getEdgeTarget(defaultWeightedEdge))
-                    .append(flightRoutesGraph.getEdgeWeight(defaultWeightedEdge))
-                    .append("--");
+        if (shortestPath != null) {
+            journeySuggestion.setOutboundCost(flightMilesToCost(shortestPath.getWeight(), journey.getPassengers()));
+            journeySuggestion.setOutboundRoute(routeToString(flightRoutesGraph, shortestPath));
+        } else {
+            journeySuggestion.setOutboundCost(0);
+            journeySuggestion.setOutboundRoute("No outbound flight");
+
         }
-        System.out.println(outboundRoute);
-        System.out.println(outboundRoute);
+
     }
 
-    private GraphPath<String, DefaultWeightedEdge> findShortestPath(DirectedWeightedMultigraph<String, DefaultWeightedEdge> flightRoutesGraph, String start, String destination){
+    private void populateInbound(DirectedWeightedMultigraph<String, DefaultWeightedEdge> flightRoutesGraph, Journey journey, JourneySuggestion journeySuggestion) {
+        String start = journey.getHomeToAirport().substring(0, 1);
+        String destination = journey.getDestination();
+        GraphPath<String, DefaultWeightedEdge> shortestPath = findShortestPath(flightRoutesGraph, destination, start);
+        if (shortestPath != null) {
+            journeySuggestion.setInboundCost(flightMilesToCost(shortestPath.getWeight(), journey.getPassengers()));
+            journeySuggestion.setInboundRoute(routeToString(flightRoutesGraph, shortestPath));
+        } else {
+            journeySuggestion.setInboundCost(0);
+            journeySuggestion.setInboundRoute("No inbound flight");
+
+        }
+    }
+
+    private String routeToString(DirectedWeightedMultigraph<String, DefaultWeightedEdge> flightRoutesGraph, GraphPath<String, DefaultWeightedEdge> shortestPath) {
+        ArrayList<String> routes = new ArrayList<>();
+        for (DefaultWeightedEdge defaultWeightedEdge : shortestPath.getEdgeList()) {
+            String route = String.join(flightRoutesGraph.getEdgeTarget(defaultWeightedEdge),
+                    flightRoutesGraph.getEdgeSource(defaultWeightedEdge),
+                    String.valueOf((int) flightRoutesGraph.getEdgeWeight(defaultWeightedEdge)));
+            routes.add(route);
+        }
+        return String.join("--", routes);
+    }
+
+    private GraphPath<String, DefaultWeightedEdge> findShortestPath(DirectedWeightedMultigraph<String, DefaultWeightedEdge> flightRoutesGraph, String start, String destination) {
         DijkstraShortestPath<String, DefaultWeightedEdge> dijkstraShortestPath = new DijkstraShortestPath<>(flightRoutesGraph);
-
-        GraphPath<String, DefaultWeightedEdge> shortestPath = dijkstraShortestPath
+        return dijkstraShortestPath
                 .getPath(start, destination);
-        System.out.println(shortestPath);
-        return shortestPath;
     }
 
-    private String routeToString(List<String> shortestPath){
-        return null;
-    }
-
-    private double calculateRouteCost(){
-        return 0;
+    private double flightMilesToCost(double flightMiles, int passengers) {
+        return flightMiles * passengers * FLIGHT_COST_PER_MILE;
     }
 }
