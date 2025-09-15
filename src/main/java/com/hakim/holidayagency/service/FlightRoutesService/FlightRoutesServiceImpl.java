@@ -1,21 +1,11 @@
 package com.hakim.holidayagency.service.FlightRoutesService;
 
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.hakim.holidayagency.service.FlightsDataService.FlightsDataService;
-import com.mxgraph.layout.mxCircleLayout;
-import com.mxgraph.layout.mxIGraphLayout;
-import com.mxgraph.util.mxCellRenderer;
-import org.jgrapht.Graph;
-import org.jgrapht.ext.JGraphXAdapter;
 import org.jgrapht.graph.*;
 import org.jgrapht.graph.builder.GraphTypeBuilder;
 import org.springframework.stereotype.Service;
 
-import javax.imageio.ImageIO;
 import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 import java.util.InputMismatchException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,13 +19,13 @@ public class FlightRoutesServiceImpl implements FlightRoutesService {
     }
 
     /**
-     * Get list of flights from data service and for each flight:
+     * Get list of flights from flightsDataService and for each flight:
      *  - Create vertices for any airport mentioned ("A", "B" etc)
      *  - store the start + end airport as the source and target of an edge
      *  - store the distance in miles as the weight of the edge
      *  - repeat for each flight
-     * @return Directed Multigraph where each vertex represents an airport and
-     * the weight of an edge represents the distance of the flight in miles.
+     * @return Directed Multigraph where each vertex represents an airport and each
+     * edge represents a flight route where the weight represents distance of the flight.
      */
     @Override
     public DirectedWeightedMultigraph<String, DefaultWeightedEdge> getFlightRoutes() {
